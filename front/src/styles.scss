@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "@angular/material/prebuilt-themes/pink-bluegrey.css";
+
+.max-w-half {
+  max-width: 50%;
+}
+
+.max-w-threequarter {
+  max-width: 75%;
+}
+
+.max-h {
+  min-height: 100vh;
+}
+
+.min-w-half {
+  min-width: 50%;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.btn-color{
+  background-color: #c2185b;
+}

@@ -1,0 +1,42 @@
+@if(disabled){
+  <div
+    class="card text-black opacity-20 pointer-events-none"
+    [ngClass]="'bg-white'"
+    tabindex="0"
+    role="button"
+    aria-pressed="false"
+  >
+    <div class="top">
+      <!-- <div class="rank">A</div>
+      <div class="suit">♠</div> -->
+    </div>
+    <div class="center">
+      {{ value }}
+    </div>
+    <div class="bottom">
+      <!-- <div class="suit">♠</div>
+      <div class="rank">A</div> -->
+    </div>
+  </div>
+}@else{
+  <div
+    class="card text-black"
+    [ngClass]="selected ? 'bg-slate-400 -translate-y-2' : 'bg-white'"
+    (click)="vote()"
+    tabindex="0"
+    role="button"
+    aria-pressed="false"
+  >
+    <div class="top">
+      <!-- <div class="rank">A</div>
+      <div class="suit">♠</div> -->
+    </div>
+    <div class="center">
+      {{ value }}
+    </div>
+    <div class="bottom">
+      <!-- <div class="suit">♠</div>
+      <div class="rank">A</div> -->
+    </div>
+  </div>
+}
