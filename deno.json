@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "dev": "deno run -A --watch main.ts",
+    "watch-front": "cd front && ng build --watch",
+    "build-deno": "cd front && ng build --delete-output-path",
+    "front": "cd front && ng serve",
+  }
+}

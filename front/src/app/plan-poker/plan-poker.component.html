@@ -1,0 +1,308 @@
+<header>
+  <mat-toolbar>
+    <mat-toolbar-row>
+      <h1>Planning Poking</h1>
+      <span class="spacer"></span>
+      @if(connected){
+      <button
+        mat-icon-button
+        aria-label="Share link of the room"
+        (click)="share(mySnackbar)"
+      >
+        <mat-icon>share</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        aria-label="Show room configuration"
+        (click)="openDialog(myModal)"
+        class="font-bold py-2 px-4 rounded- shadow-lg"
+      >
+        <mat-icon>settings</mat-icon>
+      </button>
+      <button
+        *ngIf="connected"
+        (click)="openSidenav = !openSidenav"
+        mat-icon-button
+        aria-label="Show sidenav"
+      >
+        <div
+          class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-blue-500 border-2 border-white rounded-full -top-0 -end-1 dark:border-gray-900"
+        >
+          {{ data.users ? data.users.length : "?" }}
+        </div>
+        <mat-icon>people</mat-icon>
+      </button>
+      }
+    </mat-toolbar-row>
+  </mat-toolbar>
+</header>
+<main>
+  <mat-drawer-container>
+    <!-- sidebar d'une salle -->
+    <mat-drawer
+      mode="over"
+      position="end"
+      class="max-h"
+      [(opened)]="openSidenav"
+    >
+      <table class="table-fixed m-5">
+        <thead>
+          <tr>
+            <th class="text-center" colspan="2">
+              {{ "Room : " + data?.name }}
+            </th>
+          </tr>
+          <tr>
+            <th class="p-3">User</th>
+            <th class="p-3">Vote</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of data.users">
+            <td class="text-center">
+              <p class="h-5">
+                {{ item.name }}
+              </p>
+            </td>
+            <td class="text-center">
+              <p class="h-5">
+                @if(item.id === userId || data.status === 2){
+                @if(item.vote.length>0){
+                {{ item.vote }}
+                } @else{
+                <mat-icon fontIcon="pending"></mat-icon>
+                } } @else if(item.vote.length > 0){
+                <mat-icon fontIcon="done"></mat-icon>
+                } @else {
+                <mat-icon fontIcon="pending"></mat-icon>
+                }
+              </p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-drawer>
+
+    <!-- écran de connexion -->
+    <mat-drawer-content class="bg-white max-h">
+      <div *ngIf="!connected" class="container max-w-full">
+        <form [formGroup]="identityForm" (ngSubmit)="submit()" class="w-2/3">
+          <mat-card class="mt-10 rounded">
+            <mat-card-header class="container">
+              <mat-card-title class="text-white">
+                <h2>@if(roomId){ CONNECT }@else{ CREATE A ROOM }</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content [formGroup]="identityForm" class="mt-5">
+              <p *ngIf="!roomId">
+                <mat-form-field class="w-full">
+                  <mat-label class="text-gray-200">Room</mat-label>
+                  <input
+                    matInput
+                    formControlName="roomName"
+                    placeholder="Room"
+                  />
+                </mat-form-field>
+              </p>
+              <p>
+                <mat-form-field class="w-full">
+                  <mat-label class="text-gray-200">Username</mat-label>
+                  <input
+                    matInput
+                    formControlName="userName"
+                    placeholder="Username"
+                  />
+                </mat-form-field>
+              </p>
+            </mat-card-content>
+            <mat-expansion-panel *ngIf="!roomId">
+              <mat-expansion-panel-header>
+                <mat-panel-title> Other options </mat-panel-title>
+              </mat-expansion-panel-header>
+              <mat-form-field class="w-full">
+                <mat-label>Card suits</mat-label>
+                <mat-select formControlName="suit">
+                  @for (suit of suits; track suit) {
+                  <mat-option [value]="suit.cards">{{
+                    suit.name + " (" + suit.cards + ")"
+                  }}</mat-option>
+                  }
+                  <mat-option value="custom">Custom</mat-option>
+                </mat-select>
+              </mat-form-field>
+              @if(identityForm.value.suit==="custom"){
+              <p>
+                <mat-form-field class="w-full">
+                  <mat-label class="text-gray-200">Custom suit</mat-label>
+                  <input
+                    matInput
+                    formControlName="customSuit"
+                    placeholder="Suit"
+                  />
+                  <mat-hint>Example : 1;2;5;10;20;50</mat-hint>
+                </mat-form-field>
+              </p>
+              }
+            </mat-expansion-panel>
+            <mat-card-actions class="container">
+              <button
+                type="submit"
+                mat-raised-button
+                color="primary"
+                [disabled]="!identityForm.valid"
+              >
+                CONNECT
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </form>
+      </div>
+
+      <!-- écran de préparation -->
+      <div *ngIf="connected">
+        <div class="container flex flex-col max-w-full">
+          <mat-card class="mt-10 rounded w-2/3">
+            <mat-card-header class="container">
+              <mat-card-title>
+                <h2>{{ data.name }}</h2>
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="container mt-5">
+                <div class="grid grid-cols-5 gap-1">
+                  <card
+                    *ngFor="let item of data.styleCard"
+                    [disabled]="data.status != '1'"
+                    [value]="item"
+                    [selected]="item === vote"
+                    (voted)="onVoted($event)"
+                  />
+                </div>
+              </div>
+            </mat-card-content>
+            <mat-card-actions class="container">
+              <button mat-raised-button color="primary" (click)="passer()">
+                @switch (data.status) { @case(0){ VOTE NOW } @case(1){ SHOWING
+                RESULT } @case(2) { NEW VOTE } }
+              </button>
+            </mat-card-actions>
+            <mat-card-content class="container">
+              <table class="table-fixed m-5">
+                <thead>
+                  <tr>
+                    <th class="p-3">User</th>
+                    <th class="p-3">Vote</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of data.users">
+                    <td class="text-center">
+                      <p class="h-5">
+                        {{ item.name }}
+                      </p>
+                    </td>
+                    <td class="text-center">
+                      <p class="h-5">
+                        @if(item.id === userId || data.status === 2){ @if
+                        (item.vote.length>0){
+                        {{ item.vote }}
+                        } @else{
+                        <mat-icon fontIcon="pending"></mat-icon>
+                        } } @else if(item.vote.length > 0){
+                        <mat-icon fontIcon="done"></mat-icon>
+                        } @else if(item.vote === 0){
+                        <mat-icon fontIcon="pending"></mat-icon>
+                        } @else {
+                        <mat-icon fontIcon="pending"></mat-icon>
+                        }
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </mat-card-content>
+            <mat-card-content *ngIf="data.description.length > 0">
+              <div class="mt-5">
+                <h3 class="text-gray-100">Description</h3>
+                <p class="text-gray-200 text-justify">{{ data.description }}</p>
+              </div>
+            </mat-card-content>
+            <mat-card-actions class="container">
+              <button
+                *ngIf="data.url"
+                mat-raised-button
+                color="primary"
+                (click)="goToLink(data.url)"
+                [matTooltip]="data.url"
+              >
+                {{ "Check the link" }}
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        </div>
+      </div>
+      <!-- <pre class="text-black">
+        {{ data | json }}
+    </pre> -->
+    </mat-drawer-content>
+  </mat-drawer-container>
+</main>
+
+<ng-template #myModal>
+  <form [formGroup]="optionForm" (ngSubmit)="updateSalle()">
+    <mat-card class="rounded">
+      <mat-card-header class="container">
+        <mat-card-title class="text-white">Configuration</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="mt-5">
+        <p>
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label class="text-gray-200">Room name</mat-label>
+            <textarea
+              matInput
+              formControlName="name"
+              placeholder="Room name"
+            ></textarea>
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label class="text-gray-200">Description</mat-label>
+            <textarea
+              matInput
+              formControlName="description"
+              placeholder="Description"
+            ></textarea>
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label class="text-gray-200">Link</mat-label>
+            <input matInput formControlName="url" placeholder="Link" />
+          </mat-form-field>
+        </p>
+      </mat-card-content>
+      <mat-card-actions class="container">
+        <button
+          type="submit"
+          mat-raised-button
+          color="primary"
+          [disabled]="!identityForm.valid"
+        >
+          SAVE
+        </button>
+      </mat-card-actions>
+      <mat-card-actions class="container">
+        <button mat-raised-button color="primary" (click)="share(mySnackbar)">
+          SHARE LINK
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+</ng-template>
+
+<ng-template #mySnackbar>
+  <span class="example-pizza-party" matSnackBarLabel>
+    The link is in the clipboard
+  </span>
+</ng-template>
