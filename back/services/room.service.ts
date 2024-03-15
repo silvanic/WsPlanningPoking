@@ -1,5 +1,5 @@
 import { Room } from "../models/Room.ts";
-import { User, Vote } from "../models/type.ts";
+import { User, Vote } from "../../interfaces.ts";
 
 export class RoomService{
 

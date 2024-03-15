@@ -4,30 +4,16 @@
       <h1>Planning Poking</h1>
       <span class="spacer"></span>
       @if(connected){
-      <button
-        mat-icon-button
-        aria-label="Share link of the room"
-        (click)="share(mySnackbar)"
-      >
+      <button mat-icon-button aria-label="Share link of the room" (click)="share(mySnackbar)">
         <mat-icon>share</mat-icon>
       </button>
-      <button
-        mat-icon-button
-        aria-label="Show room configuration"
-        (click)="openDialog(myModal)"
-        class="font-bold py-2 px-4 rounded- shadow-lg"
-      >
+      <button *ngIf="isUser()" mat-icon-button aria-label="Show room configuration" (click)="openDialog(myModal)"
+        class="font-bold py-2 px-4 rounded- shadow-lg">
         <mat-icon>settings</mat-icon>
       </button>
-      <button
-        *ngIf="connected"
-        (click)="openSidenav = !openSidenav"
-        mat-icon-button
-        aria-label="Show sidenav"
-      >
+      <button *ngIf="connected" (click)="openSidenav = !openSidenav" mat-icon-button aria-label="Show sidenav">
         <div
-          class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-blue-500 border-2 border-white rounded-full -top-0 -end-1 dark:border-gray-900"
-        >
+          class="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-blue-500 border-2 border-white rounded-full -top-0 -end-1 dark:border-gray-900">
           {{ data.users ? data.users.length : "?" }}
         </div>
         <mat-icon>people</mat-icon>
@@ -39,12 +25,7 @@
 <main>
   <mat-drawer-container>
     <!-- sidebar d'une salle -->
-    <mat-drawer
-      mode="over"
-      position="end"
-      class="max-h"
-      [(opened)]="openSidenav"
-    >
+    <mat-drawer mode="over" position="end" class="max-h" [(opened)]="openSidenav">
       <table class="table-fixed m-5">
         <thead>
           <tr>
@@ -54,7 +35,6 @@
           </tr>
           <tr>
             <th class="p-3">User</th>
-            <th class="p-3">Vote</th>
           </tr>
         </thead>
         <tbody>
@@ -62,20 +42,6 @@
             <td class="text-center">
               <p class="h-5">
                 {{ item.name }}
-              </p>
-            </td>
-            <td class="text-center">
-              <p class="h-5">
-                @if(item.id === userId || data.status === 2){
-                @if(item.vote.length>0){
-                {{ item.vote }}
-                } @else{
-                <mat-icon fontIcon="pending"></mat-icon>
-                } } @else if(item.vote.length > 0){
-                <mat-icon fontIcon="done"></mat-icon>
-                } @else {
-                <mat-icon fontIcon="pending"></mat-icon>
-                }
               </p>
             </td>
           </tr>
@@ -86,7 +52,7 @@
     <!-- écran de connexion -->
     <mat-drawer-content class="bg-white max-h">
       <div *ngIf="!connected" class="container max-w-full">
-        <form [formGroup]="identityForm" (ngSubmit)="submit()" class="w-2/3">
+        <form [formGroup]="identityForm" (ngSubmit)="submit()" class="w-4/5">
           <mat-card class="mt-10 rounded">
             <mat-card-header class="container">
               <mat-card-title class="text-white">
@@ -97,22 +63,28 @@
               <p *ngIf="!roomId">
                 <mat-form-field class="w-full">
                   <mat-label class="text-gray-200">Room</mat-label>
-                  <input
-                    matInput
-                    formControlName="roomName"
-                    placeholder="Room"
-                  />
+                  <input matInput formControlName="roomName" placeholder="Room" />
+                  <mat-hint>Need 3 characters at least</mat-hint>
                 </mat-form-field>
               </p>
               <p>
                 <mat-form-field class="w-full">
                   <mat-label class="text-gray-200">Username</mat-label>
-                  <input
-                    matInput
-                    formControlName="userName"
-                    placeholder="Username"
-                  />
+                  <input matInput formControlName="userName" placeholder="Username" />
+                  <mat-hint>Need 3 characters at least</mat-hint>
                 </mat-form-field>
+              </p>
+              <p *ngIf="roomId">
+                <mat-label id="example-radio-group-label" matTooltip="...a wizard, Harry">You are a ...</mat-label>
+                <mat-radio-group class="flex flex-column" formControlName="userType"
+                  aria-labelledby="example-radio-group-label">
+                  <mat-radio-button [value]="TypeUser.USER">{{
+                    TypeUser.USER.toString()
+                    }}</mat-radio-button>
+                  <mat-radio-button [value]="TypeUser.SPEC">{{
+                    TypeUser.SPEC.toString()
+                    }}</mat-radio-button>
+                </mat-radio-group>
               </p>
             </mat-card-content>
             <mat-expansion-panel *ngIf="!roomId">
@@ -125,7 +97,7 @@
                   @for (suit of suits; track suit) {
                   <mat-option [value]="suit.cards">{{
                     suit.name + " (" + suit.cards + ")"
-                  }}</mat-option>
+                    }}</mat-option>
                   }
                   <mat-option value="custom">Custom</mat-option>
                 </mat-select>
@@ -134,23 +106,14 @@
               <p>
                 <mat-form-field class="w-full">
                   <mat-label class="text-gray-200">Custom suit</mat-label>
-                  <input
-                    matInput
-                    formControlName="customSuit"
-                    placeholder="Suit"
-                  />
+                  <input matInput formControlName="suit" placeholder="Suit" />
                   <mat-hint>Example : 1;2;5;10;20;50</mat-hint>
                 </mat-form-field>
               </p>
               }
             </mat-expansion-panel>
             <mat-card-actions class="container">
-              <button
-                type="submit"
-                mat-raised-button
-                color="primary"
-                [disabled]="!identityForm.valid"
-              >
+              <button type="submit" mat-raised-button color="primary" [disabled]="!identityForm.valid">
                 CONNECT
               </button>
             </mat-card-actions>
@@ -161,33 +124,36 @@
       <!-- écran de préparation -->
       <div *ngIf="connected">
         <div class="container flex flex-col max-w-full">
-          <mat-card class="mt-10 rounded w-2/3">
+          <mat-card class="mt-10 rounded w-4/5">
             <mat-card-header class="container">
-              <mat-card-title>
-                <h2>{{ data.name }}</h2>
+              <mat-card-title class="text-center">
+                <h2>{{ data.name }}</h2> 
               </mat-card-title>
+              <mat-card-subtitle>
+                <mat-chip> {{this.data.status===0?'In preparation':
+                (this.data.status===1?'Voting...':'Result')}} </mat-chip>
+              </mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
               <div class="container mt-5">
-                <div class="grid grid-cols-5 gap-1">
-                  <card
-                    *ngFor="let item of data.styleCard"
-                    [disabled]="data.status != '1'"
+                <div class="grid grid-cols-5 gap-5">
+                  <card *ngFor="let item of data.styleCard" 
+                    [matBadge]="getVoteStat(item)" 
+                    [disabled]="data.status != '1' || !isUser()" 
                     [value]="item"
-                    [selected]="item === vote"
-                    (voted)="onVoted($event)"
-                  />
+                    [selected]="item === vote" 
+                    (voted)="onVoted($event)" />
                 </div>
               </div>
             </mat-card-content>
-            <mat-card-actions class="container">
+            <mat-card-actions class="container mt-5" *ngIf="isUser()">
               <button mat-raised-button color="primary" (click)="passer()">
-                @switch (data.status) { @case(0){ VOTE NOW } @case(1){ SHOWING
-                RESULT } @case(2) { NEW VOTE } }
+                @switch (data.status) { @case(0){ ESTIMATE } @case(1){ REVEAL RESULT
+                } @case(2) { PREPARE A NEW VOTE } }
               </button>
             </mat-card-actions>
             <mat-card-content class="container">
-              <table class="table-fixed m-5">
+              <table class="table-fixed m-5" [ngClass]="data.status===0?'invisible':''">
                 <thead>
                   <tr>
                     <th class="p-3">User</th>
@@ -195,7 +161,9 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let item of data.users">
+                  @for (item of data.users; track $index) {
+                  @if(item.type===TypeUser.USER){
+                  <tr>
                     <td class="text-center">
                       <p class="h-5">
                         {{ item.name }}
@@ -203,7 +171,7 @@
                     </td>
                     <td class="text-center">
                       <p class="h-5">
-                        @if(item.id === userId || data.status === 2){ @if
+                        @if(item.id === user?.id || data.status === 2){ @if
                         (item.vote.length>0){
                         {{ item.vote }}
                         } @else{
@@ -218,6 +186,7 @@
                       </p>
                     </td>
                   </tr>
+                  } }
                 </tbody>
               </table>
             </mat-card-content>
@@ -228,14 +197,9 @@
               </div>
             </mat-card-content>
             <mat-card-actions class="container">
-              <button
-                *ngIf="data.url"
-                mat-raised-button
-                color="primary"
-                (click)="goToLink(data.url)"
-                [matTooltip]="data.url"
-              >
-                {{ "Check the link" }}
+              <button *ngIf="data.url" mat-raised-button color="primary" (click)="goToLink(data.url)"
+                [matTooltip]="data.url">
+                {{ "Check the User Story" }}
               </button>
             </mat-card-actions>
           </mat-card>
@@ -258,37 +222,24 @@
         <p>
           <mat-form-field appearance="fill" class="w-full">
             <mat-label class="text-gray-200">Room name</mat-label>
-            <textarea
-              matInput
-              formControlName="name"
-              placeholder="Room name"
-            ></textarea>
+            <textarea matInput formControlName="name" placeholder="Room name"></textarea>
           </mat-form-field>
         </p>
         <p>
           <mat-form-field appearance="fill" class="w-full">
             <mat-label class="text-gray-200">Description</mat-label>
-            <textarea
-              matInput
-              formControlName="description"
-              placeholder="Description"
-            ></textarea>
+            <textarea matInput formControlName="description"></textarea>
           </mat-form-field>
         </p>
         <p>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label class="text-gray-200">Link</mat-label>
-            <input matInput formControlName="url" placeholder="Link" />
+            <mat-label class="text-gray-200">User Story URL</mat-label>
+            <input matInput formControlName="url" />
           </mat-form-field>
         </p>
       </mat-card-content>
       <mat-card-actions class="container">
-        <button
-          type="submit"
-          mat-raised-button
-          color="primary"
-          [disabled]="!identityForm.valid"
-        >
+        <button type="submit" mat-raised-button color="primary" [disabled]="!identityForm.valid">
           SAVE
         </button>
       </mat-card-actions>
@@ -306,3 +257,4 @@
     The link is in the clipboard
   </span>
 </ng-template>
+

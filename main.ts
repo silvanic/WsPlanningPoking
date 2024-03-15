@@ -9,12 +9,11 @@ import { Application, Router, Status, send } from "jsr:@oak/oak@14";
 
 import { RoomService } from "./back/services/room.service.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
+import { loggerMiddleware } from "./back/middlewares/logger.middleware.ts";
 
 export const roomService = new RoomService();
 
 const router = new Router();
-
-const TIME_OUT_VOTE = 3000;
 
 /**
  * différents events :
@@ -45,12 +44,13 @@ router
     }
     const user = roomService.addUser(room.id, {
       id: null,
+      type: data.type,
       vote: "",
       name: data.username,
     });
     ctx.response.status = 200;
     ctx.response.body = {
-      userId: user?.id,
+      user: user,
       room: room.sendJSON(),
     };
   })
@@ -91,8 +91,13 @@ router
         };
 
         socket.onclose = () => {
-          roomService.removeUser(roomId, userId);
-          broadcastRoom(roomId);
+          roomService.removeUser(roomId, userId);          
+          const room = roomService.get(roomId);
+          if(room && room.users.length===0){
+            roomService.removeRoom(roomId);
+          }else{
+            broadcastRoom(roomId);
+          }
         };
       } else {
         socket.close(1008, "Room doesn't exist");
@@ -107,17 +112,10 @@ router
     const room = roomService.get(ctx.params.id);
     if (room) {
       ctx.response.status = 200;
-      ctx.response.body = {
-        room: {
-          id: ctx.params.id,
-          name: room.name,
-        },
-      };
+      ctx.response.body = room;
     } else {
       ctx.response.status = 404;
-      ctx.response.body = {
-        room: {},
-      };
+      ctx.response.body = {};
     }
   })
   .get("/rooms", (ctx) => {
@@ -127,20 +125,6 @@ router
       result.push(iterator[1].sendJSON());
     }
     ctx.response.body = result;
-  })
-  .put("/room/:roomId/voter", async (ctx) => {
-    const data = await ctx.request.body.json();
-    if (data.userId && data.vote) {
-      const room = roomService.get(ctx.params.roomId);
-      if (room) {
-        roomService.setVote(room.id, {
-          userId: data.userId,
-          vote: data.vote,
-        });
-        //eventemitter.emit("send", room, "voter");
-        ctx.response.status = 200;
-      }
-    }
   })
   .get("/testing/:roomId", (ctx) => {
     ctx.response.status = 200;
@@ -162,14 +146,7 @@ router
 const app = new Application();
 
 // Logger
-app.use(async (context, next) => {
-  await next();
-  console.log(
-    `${green(context.request.method)} ${cyan(
-      context.request.url.pathname
-    )}`
-  );
-});
+app.use(loggerMiddleware);
 
 // Use the router
 app.use(router.routes());

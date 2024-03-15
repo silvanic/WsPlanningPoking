@@ -7,6 +7,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { isValidCustomSuit } from '../validators/custom-suit.validator';
 import { WebsocketService } from '../services/ws.service';
+import { IRoom, SimpleUser, StatusRoom, TypeUser, User } from '../../../../interfaces';
+
 
 enum EnumEvent{
   updateStatus= "update_status",
@@ -39,9 +41,10 @@ export class PlanPokerComponent {
       cards: 'XS;S;M;L;XL;XXL;?',
     },
   ];
+  TypeUser= TypeUser;
   data: any = {};
   vote = '';
-  userId = null;
+  user : SimpleUser|null=null;
   roomId = null;
   currentDate: number= Date.now();
 
@@ -54,8 +57,11 @@ export class PlanPokerComponent {
       Validators.required,
       Validators.minLength(3),
     ]),
+    userType: new FormControl(TypeUser.USER, [
+      Validators.required
+    ]),
     suit: new FormControl(this.suits[0].cards),
-    customSuit: new FormControl(this.suits[0].cards, [isValidCustomSuit(";")])
+    customSuit: new FormControl(null, [isValidCustomSuit(";")])
   });
   
   optionForm = new FormGroup({
@@ -80,13 +86,14 @@ export class PlanPokerComponent {
     const id = this.route.snapshot.params['id'];
     if (id && id.toString().length > 0) {
       this.myService.getRoom(id).subscribe((data) => {
-        if (data.body.room) {
-          this.roomId = data.body.room.id;
+        if (data.body) {
+          this.roomId = data.body.id;
           this.identityForm.setValue({
             userName: '',
-            roomName: data.body.room.name,
+            roomName: data.body.name,
+            userType: TypeUser.USER,
             suit: '',
-            customSuit:null
+            customSuit:null,
           });
           this.identityForm.get('roomName')?.disable();
         }
@@ -100,7 +107,7 @@ export class PlanPokerComponent {
   }
 
   submit() {
-    if (this.identityForm.value.userName) {
+    if (this.identityForm.value.userName&&this.identityForm.value.userType) {
       const suit = this.identityForm.value.suit && this.identityForm.value.suit!= 'custom' 
         ? this.identityForm.value.suit
         : this.identityForm.value.customSuit ?? '';
@@ -109,22 +116,29 @@ export class PlanPokerComponent {
           this.identityForm.value.roomName ?? '',
           this.identityForm.value.userName,
           suit,
+          this.identityForm.value.userType,
           this.roomId
         )
         .subscribe((data: any) => {
           this.roomId = data.room.id;
-          this.userId = data.userId;
-          if(this.roomId&&this.userId){
+          this.user = data.user;
+          if(this.roomId&&this.user&&this.user.id){
             this.connected = true;
             this.data=data.room;
-            this.wsService.connect(environment.wsUrl.replace(':room', this.roomId).replace(':user', this.userId));
+            this.wsService.connect(environment.wsUrl.replace(':room', this.roomId).replace(':user', this.user.id));
+            this.wsService.connected.subscribe((data)=>{
+              this.connected=data;
+            })
             this.wsService.message.subscribe((data)=>{
-              this.data=JSON.parse(data);
+              this.data=data;
               this.optionForm.setValue({
                 name:this.data.name,
                 description:this.data.description,
                 url: this.data.url
               })
+              if(this.data.status===0){
+                this.vote='';
+              }
             })
           }
         });
@@ -152,7 +166,6 @@ export class PlanPokerComponent {
   }
 
   updateSalle() {
-    console.log(this.optionForm);
     if (this.roomId && this.optionForm.valid) {
       const message = {
         event: EnumEvent.updateInfo,
@@ -166,12 +179,8 @@ export class PlanPokerComponent {
   }
 
   onVoted(value: string) {
-    if (this.roomId && this.userId) {
+    if (this.user && this.user.id) {
       this.vote = value;
-      let index = this.data.users.findIndex((user:any)=>user.id===this.userId);
-      if(index!==-1){
-        this.data.users[index].vote=value;
-      }
       const message = {
         event: EnumEvent.vote,
         vote: value
@@ -194,7 +203,7 @@ export class PlanPokerComponent {
         () => {
           this._snackbar.open(
             'Error happend while saving in the clipboard',
-            'Fermer',
+            'Close',
             {
               horizontalPosition: 'center',
               verticalPosition: 'top',
@@ -204,5 +213,17 @@ export class PlanPokerComponent {
         }
       );
     }
+  }
+
+  isUser(){
+    return this.user?.type==TypeUser.USER;
+  }
+
+  getVoteStat(value: string){
+    if(this.data.status!==StatusRoom.VOTE){
+      return null;
+    }
+    let size =this.data.users.filter((user:SimpleUser)=>user.vote===value).length 
+    return size===0?null:size;
   }
 }
