@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import { IRoom } from '../../../../interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -7,7 +8,8 @@ import { Subject } from 'rxjs';
 export class WebsocketService {
   private socket!: WebSocket;
 
-  message: Subject<any>= new Subject<any>();
+  message: Subject<IRoom>= new Subject<IRoom>();
+  connected: Subject<boolean>= new Subject<boolean>();
 
   constructor() { }
 
@@ -16,15 +18,17 @@ export class WebsocketService {
 
     this.socket.onopen = () => {
       console.log('WebSocket connection established.');
+      this.connected.next(true);
     };
 
     this.socket.onmessage = (event) => {
       console.log(event.data.toString());
-      this.message.next(event.data);
+      this.message.next(JSON.parse(event.data));
     };
 
     this.socket.onclose = (event) => {
       console.log('WebSocket connection closed:', event);
+      this.connected.next(false);
     };
 
     this.socket.onerror = (error) => {

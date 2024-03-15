@@ -1,5 +1,5 @@
 import { cryptoRandomString } from "https://deno.land/x/crypto_random_string@1.0.0/cryptoRandomString.ts";
-import { User, Vote, StatusRoom } from "./type.ts";
+import { User, Vote, StatusRoom, IRoom } from "../../interfaces.ts";
 
 export class Room {
 
@@ -8,8 +8,8 @@ export class Room {
     status: StatusRoom;
     users: Array<User>;
     styleCard : Array<string>;
-    url?: string;
-    description?: string;
+    url: string;
+    description: string;
     lastUpdated:number;
 
     constructor(name: string, suit: Array<string>) {
@@ -32,7 +32,9 @@ export class Room {
         if(index==-1){
             return null;
         }
-        return this.users[index];
+        const user = this.users[index];
+        delete user.socket;
+        return user;
     }
 
     addUser(user: User): User{        
@@ -87,7 +89,8 @@ export class Room {
         for (let i=0; i<this.users.length;i++) {
             this.users[i].vote='';
         }
-        this.status = StatusRoom.PREPARATION
+        this.status = StatusRoom.PREPARATION;
+        this.url = '';
         this.updated();
     }
 
@@ -122,7 +125,7 @@ export class Room {
     }
 
     sendJSON(){
-        const obj: any =  {
+        const obj: IRoom =  {
             id: this.id,
             name: this.name,
             status: this.status,

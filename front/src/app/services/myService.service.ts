@@ -1,34 +1,16 @@
-import { Injectable, NgZone } from "@angular/core";
-import { SseService } from "./sse.service";
+import { Injectable } from "@angular/core";
 import { Observable, catchError, throwError } from "rxjs";
-import { MessageSSE } from "../types";
 import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
 import { environment } from "../../environments/environment";
+import { IRoom, LoginResponse, TypeUser, Vote } from '../../../../interfaces';
 
 @Injectable({
     providedIn: 'root'
 })
 export class MyService {
-    constructor(private _zone: NgZone, private _sseService: SseService, private http: HttpClient){}
+    constructor(private http: HttpClient){}
 
-    getServerSentEvent(url: string) : Observable<MessageSSE>{
-        return new Observable( observer=> {
-            const eventSource = this._sseService.getEventSource(url);
-            eventSource.onmessage = event => {
-                this._zone.run(() => {
-                    observer.next(event);
-                })
-            }
-
-            eventSource.onerror = event => {
-                this._zone.run(() => {
-                    observer.error(event);
-                })
-            }
-        })
-    }
-
-    getRoom(roomId: string): Observable<HttpResponse<any>>{
+    getRoom(roomId: string): Observable<HttpResponse<IRoom|any>>{
         return this.http
             .get(environment.apiUrl + '/room/' + roomId, {observe: 'response'})
             .pipe(
@@ -36,32 +18,17 @@ export class MyService {
             );
     }
 
-    voter(roomId: string, userId: string, vote: string): Observable<any>{
-        return this.http
-            .put(environment.apiUrl+'/room/'+roomId+'/voter',{
-                userId: userId,
-                vote: vote
-            });
-    }
-
-    passer(roomId: string){
-        return this.http.put(environment.apiUrl+'/room/'+roomId, null);
-    }
-    
-    update(roomId: string, body: Object){
-        return this.http.put(environment.apiUrl+'/room/'+roomId, body);
-    }
-
-    login(roomName: string, username: string, suit: string, roomId: string|null){        
+    login(roomName: string, username: string, suit: string, userType: TypeUser, roomId: string|null): Observable<LoginResponse>{        
         const obj : any = {
             roomName: roomName,
             username: username,
+            type: userType,
             suit: suit
         };
         if(roomId){
             obj.roomId = roomId;
         }
-        return this.http.post(environment.apiUrl+'/login',obj);
+        return this.http.post(environment.apiUrl+'/login',obj) as Observable<LoginResponse>;
     }
 
     private handleError(error: HttpErrorResponse) {
