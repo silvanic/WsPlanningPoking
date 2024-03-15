@@ -9,6 +9,7 @@ import { isValidCustomSuit } from '../validators/custom-suit.validator';
 import { WebsocketService } from '../services/ws.service';
 import { IRoom, SimpleUser, StatusRoom, TypeUser, User } from '../../../../interfaces';
 
+
 enum EnumEvent{
   updateStatus= "update_status",
   vote= "vote",

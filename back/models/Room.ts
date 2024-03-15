@@ -1,6 +1,7 @@
 import { cryptoRandomString } from "https://deno.land/x/crypto_random_string@1.0.0/cryptoRandomString.ts";
 import { User, Vote, StatusRoom, IRoom } from "../../interfaces.ts";
 
+
 export class Room {
 
     id: string;
